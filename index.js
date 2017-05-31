@@ -121,7 +121,8 @@ function reportStats() {
 			"path": REPORT_PATH,
 			"headers": {
 				"Content-Type": "application/x-www-form-urlencoded",
-				"Content-Length": Buffer.byteLength(stats)
+				"Content-Length": Buffer.byteLength(stats),
+				"User-Agent": "node/" + process.versions.node + " stats-reporter/" + reporterVersion
 			}
 		}, (res) => {
 			res.on('data', (chunk) => {
