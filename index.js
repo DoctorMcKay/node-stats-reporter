@@ -6,9 +6,9 @@ const OS = require('os');
 const HTTPS = require('https');
 const QueryString = require('querystring');
 
-let g_StartupTimestamp = Math.floor(Date.now() / 1000);
-let g_RegisteredModules = {};
-let g_MachineID = getMachineId();
+var g_StartupTimestamp = Math.floor(Date.now() / 1000);
+var g_RegisteredModules = {};
+var g_MachineID = getMachineId();
 
 exports.setup = function(packageJson) {
 	if (isOptedOut()) {
@@ -50,15 +50,16 @@ function setupReporting() {
 }
 
 function getMachineId() {
-	let macs = [];
-	let interfaces = OS.networkInterfaces();
-	for (let ifaceName in interfaces) {
+	var macs = [];
+	var interfaces = OS.networkInterfaces();
+	var iface;
+	for (var ifaceName in interfaces) {
 		if (!interfaces.hasOwnProperty(ifaceName)) {
 			continue;
 		}
 
-		let iface = interfaces[ifaceName];
-		iface.forEach((virtualInterface) => {
+		iface = interfaces[ifaceName];
+		iface.forEach(function(virtualInterface) {
 			if (virtualInterface.mac != '00:00:00:00:00:00' && macs.indexOf(virtualInterface.mac) == -1) {
 				macs.push(virtualInterface.mac);
 			}
@@ -66,7 +67,7 @@ function getMachineId() {
 	}
 
 	macs.sort();
-	let hash = Crypto.createHash('sha1');
+	var hash = Crypto.createHash('sha1');
 	hash.update(macs.join(','), 'ascii');
 	return hash.digest('hex');
 }
@@ -76,29 +77,31 @@ function reportStats() {
 		return;
 	}
 
-	let cpus = OS.cpus();
+	var cpus = OS.cpus();
 
-	let reporterVersion = require('./package.json').version;
-	let machineId = g_MachineID;
-	let arch = OS.arch();
-	let cpuSpeedMhz = 0;
-	let cpuCount = cpus.length;
-	let osPlatform = OS.platform();
-	let osRelease = OS.release();
-	let totalMemory = OS.totalmem();
-	let usedMemory = totalMemory - OS.freemem();
-	let osUptimeSeconds = Math.floor(OS.uptime());
-	let appUptimeSeconds = Math.floor(Date.now() / 1000) - g_StartupTimestamp;
+	var reporterVersion = require('./package.json').version;
+	var machineId = g_MachineID;
+	var arch = OS.arch();
+	var cpuSpeedMhz = 0;
+	var cpuCount = cpus.length;
+	var osPlatform = OS.platform();
+	var osRelease = OS.release();
+	var totalMemory = OS.totalmem();
+	var usedMemory = totalMemory - OS.freemem();
+	var osUptimeSeconds = Math.floor(OS.uptime());
+	var appUptimeSeconds = Math.floor(Date.now() / 1000) - g_StartupTimestamp;
 
-	cpus.forEach((cpu) => {
+	cpus.forEach(function(cpu) {
 		if (cpu.speed > cpuSpeedMhz) {
 			cpuSpeedMhz = cpu.speed;
 		}
 	});
 
-	for (let moduleName in g_RegisteredModules) {
-		let module = g_RegisteredModules[moduleName];
-		let stats = QueryString.stringify({
+	var module, stats, req;
+
+	for (var moduleName in g_RegisteredModules) {
+		module = g_RegisteredModules[moduleName];
+		stats = QueryString.stringify({
 			"module": module.name,
 			"node_version": process.versions.node,
 			"module_version": module.version,
@@ -115,7 +118,7 @@ function reportStats() {
 			"app_uptime_seconds": appUptimeSeconds
 		});
 
-		let req = HTTPS.request({
+		req = HTTPS.request({
 			"method": "POST",
 			"hostname": REPORT_HOST,
 			"path": REPORT_PATH,
@@ -124,8 +127,8 @@ function reportStats() {
 				"Content-Length": Buffer.byteLength(stats),
 				"User-Agent": "node/" + process.versions.node + " stats-reporter/" + reporterVersion
 			}
-		}, (res) => {
-			res.on('data', (chunk) => {
+		}, function(res) {
+			res.on('data', function(chunk) {
 				if (isDebugging() && chunk.length > 0) {
 					console.log(chunk.toString('ascii'));
 				}
@@ -135,11 +138,11 @@ function reportStats() {
 
 			if (isDebugging()) {
 				console.log("==================================================");
-				console.log("Stats reported for " + module.name + "@" + module.version + ": " + res.statusCode);
-				console.log(stats);
+				console.log("Stats reported for " + this.module.name + "@" + this.module.version + ": " + res.statusCode);
+				console.log(this.stats);
 				console.log("==================================================");
 			}
-		});
+		}.bind({"module": module, "stats": stats}));
 
 		req.on('error', noop);
 		req.end(stats);
