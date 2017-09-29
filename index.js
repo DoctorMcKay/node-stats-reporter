@@ -41,8 +41,8 @@ function setupReporting() {
 	}
 
 	// Report stats hourly, and immediately in 10 minutes
-	setInterval(reportStats, 1000 * 60 * 60);
-	setTimeout(reportStats, 1000 * 60 * 10);
+	setInterval(reportStats, 1000 * 60 * 60).unref();
+	setTimeout(reportStats, 1000 * 60 * 10).unref();
 
 	if (isDebugging()) {
 		setTimeout(reportStats, 1000 * 5);
