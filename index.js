@@ -77,7 +77,7 @@ function reportStats() {
 		return;
 	}
 
-	var cpus = OS.cpus();
+	var cpus = OS.cpus() || [];
 
 	var reporterVersion = require('./package.json').version;
 	var machineId = g_MachineID;
